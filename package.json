@@ -1,0 +1,17 @@
+{
+  "name": "rete-auto-arrange-plugin",
+  "version": "0.1.0",
+  "description": "",
+  "main": "build/auto-arrange-plugin.min.js",
+  "scripts": {
+    "build": "rete --build rete.config.js",
+    "build:dev": "rete --build rete.config.js --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "Ni55aN",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "rete-cli": "^0.2.1"
+  }
+}
