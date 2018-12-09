@@ -1,39 +1,74 @@
 class AutoArrange {
-    constructor(editor, margin) {
+    constructor(editor, margin, depth) {
         this.editor = editor;
         this.margin = margin;
+        this.depth = depth;
     }
 
-    getOutputNodes(node) {
+    getNodes(node, type = 'output') {
         const nodes = [];
+        const key = `${type}s`;
 
-        for(let output of node.outputs.values())
-            for(let connection of output.connections.values())
-                nodes.push(connection.input.node);
+        for (let io of node[key].values())
+            for (let connection of io.connections.values())
+                nodes.push(connection[type === 'input' ? 'output' : 'input'].node);
             
         return nodes;
     }
 
-    arrangeOutputs(node = this.editor.nodes[0]) {
-        this.getOutputNodes(node).map(n => {
-            const offsetX = this.margin.x + this.editor.view.nodes.get(node).el.clientWidth;
+    getNodesTable(node, cols = [], depth = 0) {
+        if (this.depth && depth > this.depth) return;
+        if (!cols[depth]) cols[depth] = [];
+        if (cols[depth].includes(node)) return;
+        
+        cols[depth].push(node);
+        
+        this.getNodes(node, 'output').map(n => this.getNodesTable(n, cols, depth + 1));
+        this.getNodes(node, 'input').map(n => this.getNodesTable(n, cols, depth - 1));
 
-            n.position[0] = node.position[0] + offsetX;
-            // console.log(n)
-            this.editor.view.nodes.get(n).update();
-            this.editor.view.updateConnections({ node: n });
-            this.arrangeOutputs(n);
-        });
+        return cols;
     }
 
-    arrange(node) {
-        this.arrangeOutputs(node)
+    nodeSize(node) {
+        const el = this.editor.view.nodes.get(node).el;
+
+        return {
+            width: el.clientWidth,
+            height: el.clientHeight
+        }
+    }
+    
+    arrange(node = this.editor.nodes[0]) {
+        const table = this.getNodesTable(node);
+        const normalized = Object.keys(table).sort((i1, i2) => +i1 - + i2).map(key => table[key]);
+        const widths = normalized.map(col => Math.max(...col.map(n => this.nodeSize(n).width)));
+
+        let x = 0;
+
+        for (let [i, col] of Object.entries(normalized)) {
+            const heights = col.map(n => this.nodeSize(n).height);
+            const fullHeight = heights.reduce((a, b) => a + b + this.margin.y);
+
+            let y = 0;
+
+            x += widths[i] + this.margin.x;
+
+            for (let [j, n] of Object.entries(col)) {
+                y += heights[j] + this.margin.y;
+
+                n.position[0] = x;
+                n.position[1] = y - fullHeight / 2;
+
+                this.editor.view.nodes.get(n).update();
+                this.editor.view.updateConnections({ node: n });
+            }
+        }
     }
 }
 
-function install(editor, { margin = { x: 50, y: 50 } }) {
+function install(editor, { margin = { x: 50, y: 50 }, depth = null }) {
 
-    const ar = new AutoArrange(editor, margin);
+    const ar = new AutoArrange(editor, margin, depth);
 
     editor.arrange = ar.arrange.bind(ar);
 }
