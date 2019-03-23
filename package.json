@@ -8,8 +8,12 @@
     "build:dev": "rete --build rete.config.js --watch",
     "prepublishOnly": "npm run build"
   },
-  "author": "Ni55aN",
-  "license": "ISC",
+  "author": "Vitaliy Stoliarov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/retejs/auto-arrange-plugin.git"
+  },
   "dependencies": {},
   "devDependencies": {
     "rete-cli": "^0.3.0"
