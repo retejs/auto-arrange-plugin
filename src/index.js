@@ -56,10 +56,7 @@ class AutoArrange {
             for (let [j, n] of Object.entries(col)) {
                 y += heights[j] + this.margin.y;
 
-                n.position[0] = x;
-                n.position[1] = y - fullHeight / 2;
-
-                this.editor.view.nodes.get(n).update();
+                this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
                 this.editor.view.updateConnections({ node: n });
             }
         }
