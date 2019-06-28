@@ -6,7 +6,8 @@
   "scripts": {
     "build": "rete --build rete.config.js",
     "build:dev": "rete --build rete.config.js --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "serve-tests": "serve"
   },
   "author": "Vitaliy Stoliarov",
   "license": "MIT",
@@ -14,7 +15,9 @@
     "type": "git",
     "url": "https://github.com/retejs/auto-arrange-plugin.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "serve": "^11.0.2"
+  },
   "devDependencies": {
     "rete-cli": "^0.6.0-rc.3"
   }
