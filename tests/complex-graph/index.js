@@ -111,12 +111,14 @@ class AddComponent extends Rete.Component {
   var add1 = await components[1].createNode()
   var add2 = await components[1].createNode()
   var add3 = await components[1].createNode()
+  var add4 = await components[1].createNode()
 
   editor.addNode(n1)
   editor.addNode(n2)
   editor.addNode(add1)
   editor.addNode(add2)
   editor.addNode(add3)
+  editor.addNode(add4)
 
   editor.connect(
     n1.outputs.get("num"),
@@ -143,6 +145,10 @@ class AddComponent extends Rete.Component {
   editor.connect(
     add2.outputs.get("num"),
     add3.inputs.get("num1")
+  )
+  editor.connect(
+    add2.outputs.get("num"),
+    add4.inputs.get("num1")
   )
 
   editor.trigger("arrange", { n1 })

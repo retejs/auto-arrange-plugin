@@ -27,12 +27,15 @@ export class AutoArrange {
           edges:
             this.editor.nodes.flatMap((n, i) => {
               const edges = []
-              for (const [name, {connections: [{output}]}] of n.inputs.entries()) {
-                edges.push({
-                  id: `e.${i}.${name}`,
-                  sources: [n.id],
-                  targets: [output.node.id]
-                })
+              for (const [name, {connections}] of n.inputs.entries()) {
+                if (connections.length > 0) {
+                  const [{output}] = connections
+                  edges.push({
+                    id: `e.${i}.${name}`,
+                    sources: [n.id],
+                    targets: [output.node.id]
+                  })
+                }
               }
               return edges
             })
