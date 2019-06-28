@@ -1,32 +1,10 @@
+import dagre from "dagre"
+
 export class AutoArrange {
     constructor(editor, margin, depth) {
         this.editor = editor;
         this.margin = margin;
         this.depth = depth;
-    }
-
-    getNodes(node, type = 'output') {
-        const nodes = [];
-        const key = `${type}s`;
-
-        for (let io of node[key].values())
-            for (let connection of io.connections.values())
-                nodes.push(connection[type === 'input' ? 'output' : 'input'].node);
-
-        return nodes;
-    }
-
-    getNodesTable(node, cols = [], depth = 0) {
-        if (this.depth && depth > this.depth) return;
-        if (!cols[depth]) cols[depth] = [];
-        if (cols[depth].includes(node)) return;
-
-        cols[depth].push(node);
-
-        this.getNodes(node, 'output').map(n => this.getNodesTable(n, cols, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesTable(n, cols, depth - 1));
-
-        return cols;
     }
 
     nodeSize(node) {
@@ -39,26 +17,58 @@ export class AutoArrange {
     }
 
     arrange(node = this.editor.nodes[0]) {
-        const table = this.getNodesTable(node);
-        const normalized = Object.keys(table).sort((i1, i2) => +i1 - + i2).map(key => table[key]);
-        const widths = normalized.map(col => Math.max(...col.map(n => this.nodeSize(n).width)));
+        const graph = {
+          id: "root",
+          layoutOptions: { "elk.algorithm": "layered" },
+          children: this.editor.nodes.map((n,i) => ({
+            id: n.id,
+            ...this.nodeSize(n)
+          })),
+          edges:
+            this.editor.nodes.flatMap((n, i) => {
+              const edges = []
+              for (const [name, {connections: [{output}]}] of n.inputs.entries()) {
+                edges.push({
+                  id: `e.${i}.${name}`,
+                  sources: [n.id],
+                  targets: [output.node.id]
+                })
+              }
+              return edges
+            })
+        }
 
-        let x = 0;
+        const g = new dagre.graphlib.Graph()
 
-        for (let [i, col] of Object.entries(normalized)) {
-            const heights = col.map(n => this.nodeSize(n).height);
-            const fullHeight = heights.reduce((a, b) => a + b + this.margin.y);
+        g.setGraph({
+          rankdir: "RL",
+          align: "dl",
+          nodesep: this.margin !== undefined ? 50 : this.margin
+        })
+        g.setDefaultEdgeLabel(function() { return {}; });
 
-            let y = 0;
 
-            x += widths[i] + this.margin.x;
+        for (const node of graph.children) {
+          g.setNode(node.id, { label: node.id, width: node.width, height: node.height })
+        }
 
-            for (let [j, n] of Object.entries(col)) {
-                y += heights[j] + this.margin.y;
+        for (const edge of graph.edges) {
+          g.setEdge(edge.sources[0], edge.targets[0])
+        }
 
-                this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
-                this.editor.view.updateConnections({ node: n });
-            }
+        dagre.layout(g, {
+          rankdir: "RL",
+          align: "dl",
+        })
+
+        const idToPos = {}
+        g.nodes().forEach((nodeId) => {
+          const pos = g.node(nodeId)
+          idToPos[nodeId] = pos
+        });
+
+        for (const v of this.editor.view.nodes.values()) {
+          v.translate(idToPos[v.node.id].x, idToPos[v.node.id].y)
         }
     }
 }

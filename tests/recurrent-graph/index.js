@@ -143,7 +143,7 @@ class AddComponent extends Rete.Component {
     add3.inputs.get("num1")
   )
 
-  // editor.trigger("arrange", { n1 })
+  editor.trigger("arrange", { n1 })
 
   editor.on(
     "process nodecreated noderemoved connectioncreated connectionremoved",
