@@ -1,12 +1,13 @@
 {
   "name": "rete-auto-arrange-plugin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "main": "build/auto-arrange-plugin.min.js",
   "scripts": {
     "build": "rete --build rete.config.js",
     "build:dev": "rete --build rete.config.js --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "serve-tests": "serve"
   },
   "author": "Vitaliy Stoliarov",
   "license": "MIT",
@@ -14,8 +15,9 @@
     "type": "git",
     "url": "https://github.com/retejs/auto-arrange-plugin.git"
   },
-  "dependencies": {},
   "devDependencies": {
-    "rete-cli": "^0.6.0-rc.3"
+    "dagre": "^0.8.4",
+    "rete-cli": "^0.6.0-rc.3",
+    "serve": "^11.0.2"
   }
 }
