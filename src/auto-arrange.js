@@ -12,7 +12,7 @@ export class AutoArrange {
         for (let io of node[key].values())
             for (let connection of io.connections.values())
                 nodes.push(connection[type === 'input' ? 'output' : 'input'].node);
-            
+
         return nodes;
     }
 
@@ -20,9 +20,9 @@ export class AutoArrange {
         if (this.depth && depth > this.depth) return;
         if (!cols[depth]) cols[depth] = [];
         if (cols[depth].includes(node)) return;
-        
+
         cols[depth].push(node);
-        
+
         this.getNodes(node, 'output').map(n => this.getNodesTable(n, cols, depth + 1));
         this.getNodes(node, 'input').map(n => this.getNodesTable(n, cols, depth - 1));
 
@@ -37,7 +37,7 @@ export class AutoArrange {
             height: el.clientHeight
         }
     }
-    
+
     arrange(node = this.editor.nodes[0]) {
         const table = this.getNodesTable(node);
         const normalized = Object.keys(table).sort((i1, i2) => +i1 - + i2).map(key => table[key]);
