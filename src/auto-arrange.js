@@ -1,3 +1,6 @@
+import { Board } from './board';
+import { Cache } from './cache';
+
 export class AutoArrange {
     constructor(editor, margin, depth, vertical) {
         this.editor = editor;
@@ -17,18 +20,16 @@ export class AutoArrange {
         return nodes;
     }
 
-    getNodesTable(node, map = new WeakMap(), cols = [], depth = 0) {
+    getNodesBoard(node, cache = new Cache(), board = new Board(), depth = 0) {
         if (this.depth && depth > this.depth) return;
-        if (map.has(node)) return;
-        map.set(node, true);
-        
-        if (!cols[depth]) cols[depth] = [];
-        cols[depth].push(node);
-        
-        this.getNodes(node, 'output').map(n => this.getNodesTable(n, map, cols, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesTable(n, map, cols, depth - 1));
+        if (cache.track(node)) return;
 
-        return cols;
+        board.add(depth, node);
+        
+        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, cache, board, depth + 1));
+        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, cache, board, depth - 1));
+
+        return board;
     }
 
     getNodeSize(node) {
@@ -51,13 +52,12 @@ export class AutoArrange {
     }
     
     arrange(node = this.editor.nodes[0]) {
-        const table = this.getNodesTable(node);
-        const orderedTable = Object.keys(table).sort((i1, i2) => +i1 - +i2).map(key => table[key]);
+        const board = this.getNodesBoard(node).toArray();
         const margin = this.vertical ? { x: this.margin.y, y: this.margin.x } : this.margin;
 
         let x = 0;
 
-        for (let column of orderedTable) {
+        for (let column of board) {
             const sizes = column.map(node => this.getNodeSize(node));
             const columnWidth  = Math.max(...sizes.map(size => size.width));
             const fullHeight = sizes.reduce((sum, node) => sum + node.height + margin.y, 0);
