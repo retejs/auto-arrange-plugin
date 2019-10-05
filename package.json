@@ -1,6 +1,6 @@
 {
   "name": "rete-auto-arrange-plugin",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "",
   "main": "build/auto-arrange-plugin.min.js",
   "scripts": {
@@ -16,6 +16,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "rete-cli": "^0.6.0-rc.3"
+    "rete-cli": "^0.6.0"
   }
 }
