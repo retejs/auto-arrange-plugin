@@ -1,8 +1,9 @@
 export class AutoArrange {
-    constructor(editor, margin, depth) {
+    constructor(editor, margin, depth, vertical) {
         this.editor = editor;
         this.margin = margin;
         this.depth = depth;
+        this.vertical = vertical;
     }
 
     getNodes(node, type = 'output') {
@@ -41,23 +42,45 @@ export class AutoArrange {
     arrange(node = this.editor.nodes[0]) {
         const table = this.getNodesTable(node);
         const normalized = Object.keys(table).sort((i1, i2) => +i1 - + i2).map(key => table[key]);
-        const widths = normalized.map(col => Math.max(...col.map(n => this.nodeSize(n).width)));
+        if(this.vertical) {
+            const heights = normalized.map(row => Math.max(...row.map(n => this.nodeSize(n).height)));
+        
+              let y = 0;
+        
+              for (let [i, row] of Object.entries(table)) {
+                const widths = row.map(n => this.nodeSize(n).width);
+                const fullWidth = widths.reduce((a, b) => a + b + this.margin.x);
+        
+                let x = -Math.abs(fullWidth) / 2;
+        
+                y += heights[i] + this.margin.y;
+        
+                for (let [j, n] of Object.entries(row)) {
+                  this.editor.view.nodes.get(n).translate(x, y);
+                  this.editor.view.updateConnections({ node: n });
 
-        let x = 0;
+                  x += widths[j] + this.margin.x;
+                }
+              }
+        } else {
+            const widths = normalized.map(col => Math.max(...col.map(n => this.nodeSize(n).width)));
 
-        for (let [i, col] of Object.entries(normalized)) {
-            const heights = col.map(n => this.nodeSize(n).height);
-            const fullHeight = heights.reduce((a, b) => a + b + this.margin.y);
+            let x = 0;
 
-            let y = 0;
+            for (let [i, col] of Object.entries(normalized)) {
+                const heights = col.map(n => this.nodeSize(n).height);
+                const fullHeight = heights.reduce((a, b) => a + b + this.margin.y);
 
-            x += widths[i] + this.margin.x;
+                let y = 0;
 
-            for (let [j, n] of Object.entries(col)) {
-                y += heights[j] + this.margin.y;
+                x += widths[i] + this.margin.x;
 
-                this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
-                this.editor.view.updateConnections({ node: n });
+                for (let [j, n] of Object.entries(col)) {
+                    this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
+                    this.editor.view.updateConnections({ node: n });
+
+                    y += heights[j] + this.margin.y;
+                }
             }
         }
     }
