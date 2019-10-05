@@ -30,58 +30,49 @@ export class AutoArrange {
         return cols;
     }
 
-    nodeSize(node) {
+    getNodeSize(node) {
         const el = this.editor.view.nodes.get(node).el;
 
-        return {
+        return this.vertical ? {
+            height: el.clientWidth,
+            width: el.clientHeight
+        } : {
             width: el.clientWidth,
             height: el.clientHeight
         }
     }
+
+    translateNode(node, { x, y }) {
+        const position = this.vertical?[y, x]:[x, y];
+
+        this.editor.view.nodes.get(node).translate(...position);
+        this.editor.view.updateConnections({ node });
+    }
     
     arrange(node = this.editor.nodes[0]) {
         const table = this.getNodesTable(node);
-        const normalized = Object.keys(table).sort((i1, i2) => +i1 - + i2).map(key => table[key]);
-        if(this.vertical) {
-            const heights = normalized.map(row => Math.max(...row.map(n => this.nodeSize(n).height)));
-        
-              let y = 0;
-        
-              for (let [i, row] of Object.entries(table)) {
-                const widths = row.map(n => this.nodeSize(n).width);
-                const fullWidth = widths.reduce((a, b) => a + b + this.margin.x);
-        
-                let x = -Math.abs(fullWidth) / 2;
-        
-                y += heights[i] + this.margin.y;
-        
-                for (let [j, n] of Object.entries(row)) {
-                  this.editor.view.nodes.get(n).translate(x, y);
-                  this.editor.view.updateConnections({ node: n });
+        const orderedTable = Object.keys(table).sort((i1, i2) => +i1 - +i2).map(key => table[key]);
+        const margin = this.vertical ? { x: this.margin.y, y: this.margin.x } : this.margin;
 
-                  x += widths[j] + this.margin.x;
-                }
-              }
-        } else {
-            const widths = normalized.map(col => Math.max(...col.map(n => this.nodeSize(n).width)));
+        let x = 0;
 
-            let x = 0;
+        for (let column of orderedTable) {
+            const sizes = column.map(node => this.getNodeSize(node));
+            const columnWidth  = Math.max(...sizes.map(size => size.width));
+            const fullHeight = sizes.reduce((sum, node) => sum + node.height + margin.y, 0);
 
-            for (let [i, col] of Object.entries(normalized)) {
-                const heights = col.map(n => this.nodeSize(n).height);
-                const fullHeight = heights.reduce((a, b) => a + b + this.margin.y);
+            let y = 0;
 
-                let y = 0;
+            for (let node of column) {
+                const position = { x, y: y - fullHeight / 2 };
+                const { height } = this.getNodeSize(node);
 
-                x += widths[i] + this.margin.x;
+                this.translateNode(node, position);
 
-                for (let [j, n] of Object.entries(col)) {
-                    this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
-                    this.editor.view.updateConnections({ node: n });
-
-                    y += heights[j] + this.margin.y;
-                }
+                y += height + margin.y;
             }
+
+            x += columnWidth + margin.x;
         }
     }
 }
