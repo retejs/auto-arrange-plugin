@@ -17,15 +17,16 @@ export class AutoArrange {
         return nodes;
     }
 
-    getNodesTable(node, cols = [], depth = 0) {
+    getNodesTable(node, map = new WeakMap(), cols = [], depth = 0) {
         if (this.depth && depth > this.depth) return;
-        if (!cols[depth]) cols[depth] = [];
-        if (cols[depth].includes(node)) return;
+        if (map.has(node)) return;
+        map.set(node, true);
         
+        if (!cols[depth]) cols[depth] = [];
         cols[depth].push(node);
         
-        this.getNodes(node, 'output').map(n => this.getNodesTable(n, cols, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesTable(n, cols, depth - 1));
+        this.getNodes(node, 'output').map(n => this.getNodesTable(n, map, cols, depth + 1));
+        this.getNodes(node, 'input').map(n => this.getNodesTable(n, map, cols, depth - 1));
 
         return cols;
     }
