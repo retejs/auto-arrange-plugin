@@ -54,10 +54,10 @@ export class AutoArrange {
             x += widths[i] + this.margin.x;
 
             for (let [j, n] of Object.entries(col)) {
-                y += heights[j] + this.margin.y;
-
                 this.editor.view.nodes.get(n).translate(x, y - fullHeight / 2);
                 this.editor.view.updateConnections({ node: n });
+
+                y += heights[j] + this.margin.y;
             }
         }
     }
