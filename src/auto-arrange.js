@@ -62,10 +62,10 @@ export class AutoArrange {
         let lastBoardSize = 0;
 
         this.editor.nodes.forEach((node) => {
-            if (!inBoard.has(node.name)) {
+            if (!inBoard.has(node)) {
                 const board = this.getNodesBoard(node);
                 board.getValues().forEach((boardNode) => {
-                    inBoard.add(boardNode.name);
+                    inBoard.add(boardNode);
                 });
                 const currentBoardSize = this.getBoardSize(board);
                 if (this.vertical) {
