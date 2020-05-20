@@ -52,12 +52,39 @@ export class AutoArrange {
     }
     
     arrange(node = this.editor.nodes[0]) {
-        const board = this.getNodesBoard(node).toArray();
+        const board = this.getNodesBoard(node);
+        this.arrangeNodeBoard(board);
+    }
+
+    arrangeAll() {
+        const inBoard = new Set();
+        const offset = { x: 0, y: 0 };
+        let lastBoardSize = 0;
+
+        this.editor.nodes.forEach((node) => {
+            if (!inBoard.has(node.name)) {
+                const board = this.getNodesBoard(node);
+                board.getValues().forEach((boardNode) => {
+                    inBoard.add(boardNode.name);
+                });
+                const currentBoardSize = this.getBoardSize(board);
+                if (this.vertical) {
+                    offset.x += (currentBoardSize + lastBoardSize + this.margin.x) / 2;
+                } else {
+                    offset.y += (currentBoardSize + lastBoardSize + this.margin.y) / 2;
+                }
+                this.arrangeNodeBoard(board, offset);
+                lastBoardSize = currentBoardSize;
+            }
+        });
+    }
+
+    arrangeNodeBoard(board, offset = { x: 0, y: 0 }) {
         const margin = this.vertical ? { x: this.margin.y, y: this.margin.x } : this.margin;
 
         let x = 0;
 
-        for (let column of board) {
+        for (let column of board.toArray()) {
             const sizes = column.map(node => this.getNodeSize(node));
             const columnWidth  = Math.max(...sizes.map(size => size.width));
             const fullHeight = sizes.reduce((sum, node) => sum + node.height + margin.y, 0);
@@ -65,7 +92,7 @@ export class AutoArrange {
             let y = 0;
 
             for (let node of column) {
-                const position = { x, y: y - fullHeight / 2 };
+                const position = { x: x + offset.x, y: y - fullHeight / 2 + offset.y };
                 const { height } = this.getNodeSize(node);
 
                 this.translateNode(node, position);
@@ -75,5 +102,18 @@ export class AutoArrange {
 
             x += columnWidth + margin.x;
         }
+    }
+
+    getBoardSize(board) {
+        const margin = this.vertical ? { x: this.margin.y, y: this.margin.x } : this.margin;
+        let size = 0;
+
+        for (let column of board.toArray()) {
+            const sizes = column.map(node => this.getNodeSize(node));
+            const columnSize = sizes.reduce((sum, node) => sum + (this.vertical ? node.width + margin.x : node.height + margin.y), 0);
+            size = Math.max(size, columnSize);
+        }
+
+        return size;
     }
 }

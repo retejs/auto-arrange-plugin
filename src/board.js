@@ -16,4 +16,14 @@ export class Board {
 
         return normalized;
     }
+
+    getValues() {
+        const values = [];
+        this._cols.forEach((col) => {
+            col.forEach((value) => {
+                values.push(value);
+            });
+        });
+        return values;
+    }
 }
