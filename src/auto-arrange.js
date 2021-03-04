@@ -2,11 +2,12 @@ import { Board } from './board';
 import { Cache } from './cache';
 
 export class AutoArrange {
-    constructor(editor, margin, depth, vertical) {
+    constructor(editor, margin, depth, vertical, offset) {
         this.editor = editor;
         this.margin = margin;
         this.depth = depth;
         this.vertical = vertical;
+        this.offset = offset;
     }
 
     getNodes(node, type = 'output') {
@@ -51,18 +52,19 @@ export class AutoArrange {
         this.editor.view.updateConnections({ node });
     }
     
-    arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth }) {
+    arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth, offset = this.offset }) {
         const board = this.getNodesBoard(node, depth).toArray();
         const currentMargin = vertical ? { x: margin.y, y: margin.x } : margin;
+        const currentOffset = vertical ? { x: offset.y, y: offset.x } : offset;
 
-        let x = 0;
+        let x = currentOffset.x;
 
         for (let column of board) {
             const sizes = column.map(node => this.getNodeSize(node, vertical));
             const columnWidth  = Math.max(...sizes.map(size => size.width));
             const fullHeight = sizes.reduce((sum, node) => sum + node.height + currentMargin.y, 0);
 
-            let y = 0;
+            let y = currentOffset.y;
 
             for (let node of column) {
                 const position = { x, y: y - fullHeight / 2, vertical };
