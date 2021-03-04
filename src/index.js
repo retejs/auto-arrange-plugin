@@ -3,7 +3,7 @@ import { AutoArrange } from './auto-arrange';
 function install(editor, { margin = { x: 50, y: 50 }, depth = null, vertical = false, offset = { x: 0, y: 0 } }) {
     editor.bind('arrange');
 
-    const ar = new AutoArrange(editor, margin, depth, vertical);
+    const ar = new AutoArrange(editor, margin, depth, vertical, offset);
     
     editor.on('arrange', ({ node, ...options }) => ar.arrange(node, options));
 
