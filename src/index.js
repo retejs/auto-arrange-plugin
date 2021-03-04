@@ -1,6 +1,6 @@
 import { AutoArrange } from './auto-arrange';
 
-function install(editor, { margin = { x: 50, y: 50 }, depth = null, vertical = false }) {
+function install(editor, { margin = { x: 50, y: 50 }, depth = null, vertical = false, offset = { x: 0, y: 0 } }) {
     editor.bind('arrange');
 
     const ar = new AutoArrange(editor, margin, depth, vertical);
