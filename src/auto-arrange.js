@@ -20,22 +20,22 @@ export class AutoArrange {
         return nodes;
     }
 
-    getNodesBoard(node, cache = new Cache(), board = new Board(), depth = 0) {
-        if (this.depth && depth > this.depth) return;
+    getNodesBoard(node, maxDepth = this.depth, cache = new Cache(), board = new Board(), depth = 0) {
+        if (maxDepth && depth > maxDepth) return;
         if (cache.track(node)) return;
 
         board.add(depth, node);
         
-        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, cache, board, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, cache, board, depth - 1));
+        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, maxDepth, cache, board, depth + 1));
+        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, maxDepth, cache, board, depth - 1));
 
         return board;
     }
 
-    getNodeSize(node) {
+    getNodeSize(node, vertical = this.vertical) {
         const el = this.editor.view.nodes.get(node).el;
 
-        return this.vertical ? {
+        return vertical ? {
             height: el.clientWidth,
             width: el.clientHeight
         } : {
@@ -44,36 +44,36 @@ export class AutoArrange {
         }
     }
 
-    translateNode(node, { x, y }) {
-        const position = this.vertical?[y, x]:[x, y];
+    translateNode(node, { x, y, vertical = this.vertical }) {
+        const position = vertical?[y, x]:[x, y];
 
         this.editor.view.nodes.get(node).translate(...position);
         this.editor.view.updateConnections({ node });
     }
     
-    arrange(node = this.editor.nodes[0]) {
-        const board = this.getNodesBoard(node).toArray();
-        const margin = this.vertical ? { x: this.margin.y, y: this.margin.x } : this.margin;
+    arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth }) {
+        const board = this.getNodesBoard(node, depth).toArray();
+        const currentMargin = vertical ? { x: margin.y, y: margin.x } : margin;
 
         let x = 0;
 
         for (let column of board) {
-            const sizes = column.map(node => this.getNodeSize(node));
+            const sizes = column.map(node => this.getNodeSize(node, vertical));
             const columnWidth  = Math.max(...sizes.map(size => size.width));
-            const fullHeight = sizes.reduce((sum, node) => sum + node.height + margin.y, 0);
+            const fullHeight = sizes.reduce((sum, node) => sum + node.height + currentMargin.y, 0);
 
             let y = 0;
 
             for (let node of column) {
-                const position = { x, y: y - fullHeight / 2 };
-                const { height } = this.getNodeSize(node);
+                const position = { x, y: y - fullHeight / 2, vertical };
+                const { height } = this.getNodeSize(node, vertical);
 
-                this.translateNode(node, position);
+                this.translateNode(node, position, vertical);
 
-                y += height + margin.y;
+                y += height + currentMargin.y;
             }
 
-            x += columnWidth + margin.x;
+            x += columnWidth + currentMargin.x;
         }
     }
 }
