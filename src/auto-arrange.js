@@ -28,8 +28,11 @@ export class AutoArrange {
 
         board.add(depth, node);
 
-        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, options, cache, board, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, options, cache, board, depth - 1));
+        const outputNodes = options.substitution && options.substitution.output(node) || this.getNodes(node, 'output')
+        const inputNodes = options.substitution && options.substitution.input(node) || this.getNodes(node, 'input')
+
+        outputNodes.map(n => this.getNodesBoard(n, options, cache, board, depth + 1));
+        inputNodes.map(n => this.getNodesBoard(n, options, cache, board, depth - 1));
 
         return board;
     }
@@ -53,8 +56,8 @@ export class AutoArrange {
         this.editor.view.updateConnections({ node });
     }
 
-    arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth, offset = this.offset, skip }) {
-        const board = this.getNodesBoard(node, { depth, skip }).toArray();
+    arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth, offset = this.offset, skip, substitution }) {
+        const board = this.getNodesBoard(node, { depth, skip, substitution }).toArray();
         const currentMargin = vertical ? { x: margin.y, y: margin.x } : margin;
         const currentOffset = vertical ? { x: offset.y, y: offset.x } : offset;
 
