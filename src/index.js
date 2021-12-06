@@ -4,12 +4,12 @@ function install(editor, { margin = { x: 50, y: 50 }, depth = null, vertical = f
     editor.bind('arrange');
 
     const ar = new AutoArrange(editor, margin, depth, vertical, offset);
-    
+
     editor.on('arrange', ({ node, ...options }) => ar.arrange(node, options));
 
-    editor.arrange = node => {
+    editor.arrange = (node, options) => {
         console.log(`Deprecated: use editor.trigger('arrange', { node }) instead`);
-        ar.arrange(node);
+        ar.arrange(node, options);
     }
 }
 

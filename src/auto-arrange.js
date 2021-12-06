@@ -17,18 +17,18 @@ export class AutoArrange {
         for (let io of node[key].values())
             for (let connection of io.connections.values())
                 nodes.push(connection[type === 'input' ? 'output' : 'input'].node);
-            
+
         return nodes;
     }
 
-    getNodesBoard(node, maxDepth = this.depth, cache = new Cache(), board = new Board(), depth = 0) {
-        if (maxDepth && depth > maxDepth) return;
+    getNodesBoard(node, options, cache = new Cache(), board = new Board(), depth = 0) {
+        if (options.depth && depth > options.depth) return;
         if (cache.track(node)) return;
 
         board.add(depth, node);
-        
-        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, maxDepth, cache, board, depth + 1));
-        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, maxDepth, cache, board, depth - 1));
+
+        this.getNodes(node, 'output').map(n => this.getNodesBoard(n, options, cache, board, depth + 1));
+        this.getNodes(node, 'input').map(n => this.getNodesBoard(n, options, cache, board, depth - 1));
 
         return board;
     }
@@ -51,9 +51,9 @@ export class AutoArrange {
         this.editor.view.nodes.get(node).translate(...position);
         this.editor.view.updateConnections({ node });
     }
-    
+
     arrange(node = this.editor.nodes[0], { margin = this.margin, vertical = this.vertical, depth = this.depth, offset = this.offset }) {
-        const board = this.getNodesBoard(node, depth).toArray();
+        const board = this.getNodesBoard(node, { depth }).toArray();
         const currentMargin = vertical ? { x: margin.y, y: margin.x } : margin;
         const currentOffset = vertical ? { x: offset.y, y: offset.x } : offset;
 
