@@ -22,8 +22,8 @@ export class AutoArrange {
     }
 
     getNodesBoard(node, options, cache = new Cache(), board = new Board(), depth = 0) {
-        if (options.depth && depth > options.depth) return;
-        if (cache.track(node)) return;
+        if (options.depth && depth > options.depth) return board;
+        if (cache.track(node)) return board;
 
         board.add(depth, node);
 
