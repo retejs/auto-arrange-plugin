@@ -1,11 +1,13 @@
 {
   "name": "rete-auto-arrange-plugin",
-  "version": "0.5.0-rc.1",
+  "version": "2.0.0-beta.1",
   "description": "",
-  "main": "build/auto-arrange-plugin.min.js",
+  "main": "build/auto-arrange-plugin.common.js",
+  "module": "build/auto-arrange-plugin..esm.js",
+  "types": "types/index.d.ts",
   "scripts": {
-    "build": "rete --build rete.config.js",
-    "build:dev": "rete --build rete.config.js --watch",
+    "build": "rete build -c rete.config.ts",
+    "build:dev": "rete build -c rete.config.ts --watch",
     "prepublishOnly": "npm run build"
   },
   "author": "Vitaliy Stoliarov",
@@ -14,8 +16,16 @@
     "type": "git",
     "url": "https://github.com/retejs/auto-arrange-plugin.git"
   },
-  "dependencies": {},
   "devDependencies": {
-    "rete-cli": "^0.6.0"
+    "elkjs": "^0.8.2",
+    "rete": "file:../rete/rete-2.0.0-beta.1.tgz",
+    "rete-area-plugin": "file:../area-plugin/rete-area-plugin-0.2.1.tgz",
+    "rete-cli": "^1.0.0-beta.13"
+  },
+  "peerDependencies": {
+    "elkjs": "^0.8.2",
+    "rete": "file:../rete/rete-2.0.0-beta.1.tgz",
+    "rete-area-plugin": "file:../area-plugin/rete-area-plugin-0.2.1.tgz",
+    "web-worker": "^1.2.0"
   }
 }
