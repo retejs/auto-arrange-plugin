@@ -2,6 +2,7 @@
 import ELK, { ElkNode, ElkPort } from 'elkjs'
 import { ConnectionBase, GetSchemes, NodeBase, NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
+import { Padding } from './types'
 
 console.log('arrange')
 
@@ -11,6 +12,7 @@ type NodeScheme = NodeBase & {
   parent?: NodeId
   inputs?: Record<string, { id: string, index?: number }>
   outputs?: Record<string, { id: string, index?: number }>
+  label?: string
 }
 type ConnectionScheme = ConnectionBase & {
   targetInput?: string
@@ -22,14 +24,16 @@ export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<never, Area2DInherited<Schemes>> {
     elk = new ELK()
+    padding: Padding
 
-    constructor(private props: { editor: NodeEditor<Schemes>, area: AreaPlugin<Schemes, T> }) {
+    constructor(private props: { editor: NodeEditor<Schemes>, area: AreaPlugin<Schemes, T>, padding?: Padding }) {
         super('auto-arrange')
-
-    // this.addPipe(context => {
-    //     if (context.type === '')
-    //     return context
-    // })
+        this.padding = props.padding || {
+            top: 40,
+            left: 20,
+            right: 20,
+            bottom: 20
+        }
     }
 
     private extractNodes(parent?: NodeId): ElkNode[] {
@@ -49,15 +53,21 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
                         output
                     }))
                     : []
+                const { top, left, bottom, right } = this.padding
 
                 return <ElkNode>{
                     id,
                     width,
                     height,
+                    labels: [
+                        {
+                            text: 'label' in node ? node.label : ''
+                        }
+                    ],
                     children: this.extractNodes(id),
                     ports: [
                         ...inputs.map(({ key, input }) => (<ElkPort>{
-                            id: [id, key, 'in'].join('_'),
+                            id: this.getPortId(id, key, 'input'),
                             width: 15,
                             height: 15,
                             properties: {
@@ -66,7 +76,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
                             }
                         })),
                         ...outputs.map(({ key, output }) => (<ElkPort>{
-                            id: [id, key, 'out'].join('_'),
+                            id: this.getPortId(id, key, 'output'),
                             width: 15,
                             height: 15,
                             properties: {
@@ -76,6 +86,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
                         }))
                     ],
                     properties: {
+                        'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]`,
                         'portAlignment.east': 'BEGIN',
                         'portAlignment.west': 'END',
                         portConstraints: 'FIXED_ORDER'
@@ -84,8 +95,9 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
             })
     }
 
-    private apply(nodes: ElkNode[], parent?: ElkNode) {
-        nodes.forEach(node => {
+    // eslint-disable-next-line max-statements
+    private async apply(nodes: ElkNode[], offset = { x: 0, y: 0 }) {
+        for (const node of nodes) {
             const { id, x, y, width, height, children } = node
 
             if (typeof x === 'undefined' || typeof y === 'undefined') return
@@ -97,32 +109,45 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
                 data.width = width
                 this.props.area.renderNode(data)
             }
-            if (children) this.apply(children, node)
 
-            const parentPosition = parent
-              && typeof parent.x !== 'undefined'
-              && typeof parent.y !== 'undefined'
-                ? { x: 0, y: 0 }// { x: parent.x, y: parent.y }
-                : { x: 0, y: 0 }
+            const view = this.props.area.nodeViews.get(id)
 
-            this.props.area.nodeViews.get(id)
-                ?.translate(parentPosition.x + x, parentPosition.y + y)
-        })
+            if (view) {
+                await view.translate(offset.x + x, offset.y + y)
+                if (children) await this.apply(children, { x: offset.x + x, y: offset.y + y })
+            }
+        }
+    }
+
+    private getPortId(id: NodeId, key: string, side: 'input' | 'output') {
+        return [id, key, side].join('_')
     }
 
     async layout() {
+        const children = this.extractNodes()
+        const connections = this.props.editor.getConnections()
+        const edges = connections.map(connection => {
+            const source = connection.sourceOutput
+                ? this.getPortId(connection.source, connection.sourceOutput, 'output')
+                : connection.source
+            const target = connection.targetInput
+                ? this.getPortId(connection.target, connection.targetInput, 'input')
+                : connection.target
+
+            return {
+                id: connection.id,
+                sources: [source],
+                targets: [target]
+            }
+        })
         const graph: ElkNode = {
             id: 'root',
-            layoutOptions: { 'elk.algorithm': 'layered' },
-            children: this.extractNodes(),
-            edges: this.props.editor.getConnections()
-                .map(({ id, source, sourceOutput, target, targetInput }) => {
-                    return {
-                        id,
-                        sources: [[source, sourceOutput, 'out'].join('_')],
-                        targets: [[target, targetInput, 'in'].join('_')]
-                    }
-                })
+            layoutOptions: {
+                'elk.algorithm': 'layered',
+                'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+            },
+            children,
+            edges
         }
 
         console.log(JSON.stringify(graph, null, 4))
@@ -130,7 +155,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
         const result = await this.elk.layout(graph)
 
         if (result.children) {
-            this.apply(result.children)
+            await this.apply(result.children)
         }
     }
 }
