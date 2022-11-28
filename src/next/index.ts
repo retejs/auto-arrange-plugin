@@ -2,6 +2,7 @@
 import ELK, { ElkNode, ElkPort } from 'elkjs'
 import { ConnectionBase, GetSchemes, NodeBase, NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
+
 import { Padding } from './types'
 
 console.log('arrange')
@@ -22,13 +23,13 @@ type ConnectionScheme = ConnectionBase & {
 
 export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 
-export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<never, Area2DInherited<Schemes>> {
+export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
     padding: Padding
 
-    constructor(private props: { editor: NodeEditor<Schemes>, area: AreaPlugin<Schemes, T>, padding?: Padding }) {
+    constructor(props?: { padding?: Padding }) {
         super('auto-arrange')
-        this.padding = props.padding || {
+        this.padding = props?.padding || {
             top: 40,
             left: 20,
             right: 20,
@@ -36,8 +37,16 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
         }
     }
 
+    private getArea() {
+        return this.parentScope<AreaPlugin<Schemes, T>>(AreaPlugin)
+    }
+
+    private getEditor() {
+        return this.getArea().parentScope<NodeEditor<Schemes>>(NodeEditor)
+    }
+
     private extractNodes(parent?: NodeId): ElkNode[] {
-        return this.props.editor.getNodes()
+        return this.getEditor().getNodes()
             .filter(node => node.parent === parent)
             .map(node => {
                 const { id, width, height } = node
@@ -97,20 +106,23 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
 
     // eslint-disable-next-line max-statements
     private async apply(nodes: ElkNode[], offset = { x: 0, y: 0 }) {
+        const area = this.getArea()
+        const editor = this.getEditor()
+
         for (const node of nodes) {
             const { id, x, y, width, height, children } = node
 
             if (typeof x === 'undefined' || typeof y === 'undefined') return
 
-            const data = this.props.editor.getNode(id)
+            const data = editor.getNode(id)
 
             if (data && typeof height !== 'undefined' && typeof width !== 'undefined') {
                 data.height = height
                 data.width = width
-                this.props.area.renderNode(data)
+                area.renderNode(data)
             }
 
-            const view = this.props.area.nodeViews.get(id)
+            const view = area.nodeViews.get(id)
 
             if (view) {
                 await view.translate(offset.x + x, offset.y + y)
@@ -125,7 +137,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T> extends Scope<nev
 
     async layout() {
         const children = this.extractNodes()
-        const connections = this.props.editor.getConnections()
+        const connections = this.getEditor().getConnections()
         const edges = connections.map(connection => {
             const source = connection.sourceOutput
                 ? this.getPortId(connection.source, connection.sourceOutput, 'output')
