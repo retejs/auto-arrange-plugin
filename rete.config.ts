@@ -4,6 +4,8 @@ export default <ReteOptions>{
     input: 'src/next/index.ts',
     name: 'AutoArrangePlugin',
     globals: {
-        'elkjs': 'ELK'
+        'elkjs': 'ELK',
+        'rete': 'Rete',
+        'rete-area-plugin': 'ReteAreaPlugin'
     }
 }
