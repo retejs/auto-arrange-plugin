@@ -19,6 +19,12 @@ type ConnectionScheme = ConnectionBase & {
   targetInput?: string
   sourceOutput?: string
 }
+type PortPosition = (data: {
+    side: 'input' | 'output'
+    index: number
+    height: number
+    ports: number
+}) => number
 
 
 export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
@@ -26,15 +32,35 @@ export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
     padding: Padding
+    ports: { getPosition: PortPosition }
 
-    constructor(props?: { padding?: Padding }) {
+    constructor(props?: { padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
         super('auto-arrange')
-        this.padding = props?.padding || {
+        this.padding = props && 'padding'in props && props.padding || {
             top: 40,
             left: 20,
             right: 20,
             bottom: 20
         }
+        this.ports = {
+            getPosition: props?.ports && 'position' in props.ports && props.ports.position || (data => {
+                const { spacing, top, bottom } = props?.ports && 'spacing' in props.ports ? {
+                    spacing: typeof props.ports.spacing !== 'undefined' ? props.ports.spacing : 35,
+                    top: typeof props.ports.top !== 'undefined' ? props.ports.top : 35,
+                    bottom: typeof props.ports.bottom !== 'undefined' ? props.ports.bottom : 15
+                } : {
+                    spacing: 35,
+                    top: 35,
+                    bottom: 15
+                }
+
+                if (data.side === 'output') {
+                    return top + data.index * spacing
+                }
+                return data.height - bottom - data.ports * spacing + data.index * spacing
+            })
+        }
+
     }
 
     private getArea() {
@@ -75,30 +101,34 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
                     ],
                     children: this.extractNodes(id),
                     ports: [
-                        ...inputs.map(({ key, input }) => (<ElkPort>{
-                            id: this.getPortId(id, key, 'input'),
-                            width: 15,
-                            height: 15,
-                            properties: {
-                                side: 'WEST',
-                                index: input.index || 0
-                            }
-                        })),
-                        ...outputs.map(({ key, output }) => (<ElkPort>{
-                            id: this.getPortId(id, key, 'output'),
-                            width: 15,
-                            height: 15,
-                            properties: {
-                                side: 'EAST',
-                                index: output.index || 0
-                            }
-                        }))
+                        ...inputs
+                            .sort((a, b) => (a.input.index || 0) - (b.input.index || 0))
+                            .map(({ key }, index) => (<ElkPort>{
+                                id: this.getPortId(id, key, 'input'),
+                                width: 15,
+                                height: 15,
+                                y: this.ports.getPosition({ side: 'input', index, height, ports: inputs.length }),
+                                properties: {
+                                    side: 'WEST'
+                                }
+                            })),
+                        ...outputs
+                            .sort((a, b) => (a.output.index || 0) - (b.output.index || 0))
+                            .map(({ key }, index) => (<ElkPort>{
+                                id: this.getPortId(id, key, 'output'),
+                                width: 15,
+                                height: 15,
+                                y: this.ports.getPosition({ side: 'output', index, height, ports: inputs.length }),
+                                properties: {
+                                    side: 'EAST'
+                                }
+                            }))
                     ],
                     properties: {
                         'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]`,
                         'portAlignment.east': 'BEGIN',
                         'portAlignment.west': 'END',
-                        portConstraints: 'FIXED_ORDER'
+                        portConstraints: 'FIXED_POS'
                     }
                 }
             })
