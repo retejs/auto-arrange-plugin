@@ -161,13 +161,17 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
             children,
             edges
         }
-
-        console.log(JSON.stringify(graph, null, 4))
+        const source = JSON.stringify(graph, null, 2)
 
         const result = await this.elk.layout(graph)
 
         if (result.children) {
             await this.apply(result.children)
+        }
+
+        return {
+            source,
+            result
         }
     }
 }
