@@ -26,16 +26,21 @@ type PortPosition = (data: {
     ports: number
 }) => number
 
-
 export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
+export type ArrangePatch<Schemes extends BaseSchemes> = {
+    node: (node: Schemes['Node']) => false | Schemes['Node']
+    connection: (node: Schemes['Connection']) => false | Schemes['Connection']
+}
 
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
     padding: Padding
     ports: { getPosition: PortPosition }
+    patch: ArrangePatch<Schemes>
 
-    constructor(props?: { padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
+    constructor(props?: { patch?: Partial<ArrangePatch<Schemes>>, padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
         super('auto-arrange')
+        this.patch = { node: props?.patch?.node || (n => n), connection: props?.patch?.connection || (c => c) }
         this.padding = props && 'padding'in props && props.padding || {
             top: 40,
             left: 20,
@@ -73,6 +78,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
 
     private extractNodes(parent?: NodeId): ElkNode[] {
         return this.getEditor().getNodes()
+            .map(n => this.patch.node(n) as Schemes['Node']).filter(Boolean)
             .filter(node => node.parent === parent)
             .map(node => {
                 const { id, width, height } = node
@@ -168,6 +174,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
     async layout() {
         const children = this.extractNodes()
         const connections = this.getEditor().getConnections()
+            .map(c => this.patch.connection(c) as Schemes['Connection']).filter(Boolean)
         const edges = connections.map(connection => {
             const source = connection.sourceOutput
                 ? this.getPortId(connection.source, connection.sourceOutput, 'output')
