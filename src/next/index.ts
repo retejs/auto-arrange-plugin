@@ -36,7 +36,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
     elk = new ELK()
     padding: Padding
     ports: { getPosition: PortPosition }
-    patch: ArrangePatch<Schemes>
+    demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
 
     constructor(props?: { patch?: Partial<ArrangePatch<Schemes>>, padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
         super('auto-arrange')
@@ -200,16 +200,24 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
         }
         const source = JSON.stringify(graph, null, 2)
 
-        const result = await this.elk.layout(graph)
+        try {
+            const result = await this.elk.layout(graph)
 
-        if (result.children) {
-            await this.apply(result.children)
-        }
+            if (result.children) {
+                await this.apply(result.children)
+            }
 
-        return {
-            // put this into https://rtsys.informatik.uni-kiel.de/elklive/json.html
-            source,
-            result
+            return {
+                demonstration: this.demonstration,
+                source,
+                result
+            }
+        } catch (error) {
+            console.warn('[rete-auto-arrange-plugin]', {
+                source,
+                demonstration: this.demonstration
+            })
+            throw error
         }
     }
 }
