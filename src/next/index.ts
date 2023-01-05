@@ -1,5 +1,5 @@
 
-import ELK, { ElkNode, ElkPort } from 'elkjs'
+import ELK, { ElkNode, ElkPort, LayoutOptions } from 'elkjs'
 import { ConnectionBase, GetSchemes, NodeBase, NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
 
@@ -31,6 +31,8 @@ export type ArrangePatch<Schemes extends BaseSchemes> = {
     node: (node: Schemes['Node']) => false | Schemes['Node']
     connection: (node: Schemes['Connection']) => false | Schemes['Connection']
 }
+type Context<S extends BaseSchemes> = { nodes: S['Node'][], connections: S['Connection'][] }
+
 
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
@@ -38,9 +40,8 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
     ports: { getPosition: PortPosition }
     demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
 
-    constructor(props?: { patch?: Partial<ArrangePatch<Schemes>>, padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
+    constructor(props?: { padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
         super('auto-arrange')
-        this.patch = { node: props?.patch?.node || (n => n), connection: props?.patch?.connection || (c => c) }
         this.padding = props && 'padding'in props && props.padding || {
             top: 40,
             left: 20,
@@ -76,68 +77,90 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
         return this.getArea().parentScope<NodeEditor<Schemes>>(NodeEditor)
     }
 
-    private extractNodes(parent?: NodeId): ElkNode[] {
-        return this.getEditor().getNodes()
-            .map(n => this.patch.node(n) as Schemes['Node']).filter(Boolean)
-            .filter(node => node.parent === parent)
-            .map(node => {
-                const { id, width, height } = node
-                const inputs = node.inputs
-                    ? Object.entries(node.inputs).map(([key, input]) => ({
-                        key,
-                        input
-                    }))
-                    : []
-                const outputs = node.outputs
-                    ? Object.entries(node.outputs).map(([key, output]) => ({
-                        key,
-                        output
-                    }))
-                    : []
-                const { top, left, bottom, right } = this.padding
+    private nodeToLayoutChild(node: Schemes['Node'], context: Context<Schemes>): ElkNode {
+        const { id, width, height } = node
+        const inputs = node.inputs
+            ? Object.entries(node.inputs).map(([key, input]) => ({
+                key,
+                input
+            }))
+            : []
+        const outputs = node.outputs
+            ? Object.entries(node.outputs).map(([key, output]) => ({
+                key,
+                output
+            }))
+            : []
+        const { top, left, bottom, right } = this.padding
 
-                return <ElkNode>{
-                    id,
-                    width,
-                    height,
-                    labels: [
-                        {
-                            text: 'label' in node ? node.label : ''
-                        }
-                    ],
-                    children: this.extractNodes(id),
-                    ports: [
-                        ...inputs
-                            .sort((a, b) => (a.input.index || 0) - (b.input.index || 0))
-                            .map(({ key }, index) => (<ElkPort>{
-                                id: this.getPortId(id, key, 'input'),
-                                width: 15,
-                                height: 15,
-                                y: this.ports.getPosition({ side: 'input', index, height, ports: inputs.length }),
-                                properties: {
-                                    side: 'WEST'
-                                }
-                            })),
-                        ...outputs
-                            .sort((a, b) => (a.output.index || 0) - (b.output.index || 0))
-                            .map(({ key }, index) => (<ElkPort>{
-                                id: this.getPortId(id, key, 'output'),
-                                width: 15,
-                                height: 15,
-                                y: this.ports.getPosition({ side: 'output', index, height, ports: inputs.length }),
-                                properties: {
-                                    side: 'EAST'
-                                }
-                            }))
-                    ],
-                    properties: {
-                        'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]`,
-                        'portAlignment.east': 'BEGIN',
-                        'portAlignment.west': 'END',
-                        portConstraints: 'FIXED_POS'
-                    }
+        return <ElkNode>{
+            id,
+            width,
+            height,
+            labels: [
+                {
+                    text: 'label' in node ? node.label : ''
                 }
-            })
+            ],
+            ...this.graphToElk(context, id),
+            ports: [
+                ...inputs
+                    .sort((a, b) => (a.input?.index || 0) - (b.input?.index || 0))
+                    .map(({ key }, index) => (<ElkPort>{
+                        id: this.getPortId(id, key, 'input'),
+                        width: 15,
+                        height: 15,
+                        y: this.ports.getPosition({ side: 'input', index, height, ports: inputs.length }),
+                        properties: {
+                            side: 'WEST'
+                        }
+                    })),
+                ...outputs
+                    .sort((a, b) => (a.output?.index || 0) - (b.output?.index || 0))
+                    .map(({ key }, index) => (<ElkPort>{
+                        id: this.getPortId(id, key, 'output'),
+                        width: 15,
+                        height: 15,
+                        y: this.ports.getPosition({ side: 'output', index, height, ports: inputs.length }),
+                        properties: {
+                            side: 'EAST'
+                        }
+                    }))
+            ],
+            properties: {
+                'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]`,
+                'portAlignment.east': 'BEGIN',
+                'portAlignment.west': 'END',
+                portConstraints: 'FIXED_POS'
+            }
+        }
+    }
+
+    private connectionToLayoutEdge(connection: Schemes['Connection']) {
+        const source = connection.sourceOutput
+            ? this.getPortId(connection.source, connection.sourceOutput, 'output')
+            : connection.source
+        const target = connection.targetInput
+            ? this.getPortId(connection.target, connection.targetInput, 'input')
+            : connection.target
+
+        return {
+            id: connection.id,
+            sources: [source],
+            targets: [target]
+        }
+    }
+
+    private graphToElk(context: Context<Schemes>, parent?: NodeId): Pick<ElkNode, 'children' | 'edges'> {
+        const nodes = context.nodes.filter(n => n.parent === parent)
+
+        return {
+            children: nodes
+                .map(n => this.nodeToLayoutChild(n, context)),
+            edges: context.connections
+                .filter(() => !parent)
+                .map(c => this.connectionToLayoutEdge(c))
+        }
     }
 
     // eslint-disable-next-line max-statements
@@ -162,7 +185,9 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
 
             if (view) {
                 await view.translate(offset.x + x, offset.y + y)
-                if (children) await this.apply(children, { x: offset.x + x, y: offset.y + y })
+            }
+            if (children) {
+                await this.apply(children, { x: offset.x + x, y: offset.y + y })
             }
         }
     }
@@ -171,34 +196,21 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
         return [id, key, side].join('_')
     }
 
-    async layout() {
-        const children = this.extractNodes()
-        const connections = this.getEditor().getConnections()
-            .map(c => this.patch.connection(c) as Schemes['Connection']).filter(Boolean)
-        const edges = connections.map(connection => {
-            const source = connection.sourceOutput
-                ? this.getPortId(connection.source, connection.sourceOutput, 'output')
-                : connection.source
-            const target = connection.targetInput
-                ? this.getPortId(connection.target, connection.targetInput, 'input')
-                : connection.target
-
-            return {
-                id: connection.id,
-                sources: [source],
-                targets: [target]
-            }
-        })
+    // eslint-disable-next-line max-statements
+    async layout(props?: { options?: LayoutOptions } & Partial<Context<Schemes>>) {
+        const nodes = props?.nodes || this.getEditor().getNodes()
+        const connections = props?.connections || this.getEditor().getConnections()
         const graph: ElkNode = {
             id: 'root',
             layoutOptions: {
                 'elk.algorithm': 'layered',
-                'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+                'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+                'elk.edgeRouting': 'POLYLINE',
+                ...(props?.options || {} as LayoutOptions)
             },
-            children,
-            edges
+            ...this.graphToElk({ nodes, connections })
         }
-        const source = JSON.stringify(graph, null, 2)
+        const source = JSON.stringify(graph, null, '\t')
 
         try {
             const result = await this.elk.layout(graph)
