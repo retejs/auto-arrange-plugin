@@ -1,24 +1,16 @@
 
 import ELK, { ElkNode, ElkPort, LayoutOptions } from 'elkjs'
-import { ConnectionBase, GetSchemes, NodeBase, NodeEditor, NodeId, Scope } from 'rete'
+import { NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
 
-import { Padding } from './types'
+import { Applier, StandardApplier } from './appliers'
+import { BaseSchemes, Padding } from './types'
+
+export * as ArrangeAppliers from './appliers'
+export * from './types'
 
 console.log('arrange')
 
-type NodeScheme = NodeBase & {
-  width: number
-  height: number
-  parent?: NodeId
-  inputs?: Record<string, { id: string, index?: number }>
-  outputs?: Record<string, { id: string, index?: number }>
-  label?: string
-}
-type ConnectionScheme = ConnectionBase & {
-  targetInput?: string
-  sourceOutput?: string
-}
 type PortPosition = (data: {
     side: 'input' | 'output'
     index: number
@@ -26,13 +18,10 @@ type PortPosition = (data: {
     ports: number
 }) => number
 
-export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
-export type ArrangePatch<Schemes extends BaseSchemes> = {
-    node: (node: Schemes['Node']) => false | Schemes['Node']
-    connection: (node: Schemes['Connection']) => false | Schemes['Connection']
+type Context<S extends BaseSchemes> = {
+    nodes: S['Node'][]
+    connections: S['Connection'][]
 }
-type Context<S extends BaseSchemes> = { nodes: S['Node'][], connections: S['Connection'][] }
-
 
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
@@ -98,7 +87,7 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
                 output
             }))
             : []
-        const { top, left, bottom, right } = this.padding
+        const { top, left, bottom, right } = this.padding(node)
 
         return <ElkNode>{
             id,
@@ -170,41 +159,12 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
         }
     }
 
-    // eslint-disable-next-line max-statements
-    private async apply(nodes: ElkNode[], offset = { x: 0, y: 0 }) {
-        const area = this.getArea()
-        const editor = this.getEditor()
-
-        for (const node of nodes) {
-            const { id, x, y, width, height, children } = node
-
-            if (typeof x === 'undefined' || typeof y === 'undefined') return
-
-            const data = editor.getNode(id)
-
-            if (data && typeof height !== 'undefined' && typeof width !== 'undefined') {
-                data.height = height
-                data.width = width
-                area.renderNode(data)
-            }
-
-            const view = area.nodeViews.get(id)
-
-            if (view) {
-                await view.translate(offset.x + x, offset.y + y)
-            }
-            if (children) {
-                await this.apply(children, { x: offset.x + x, y: offset.y + y })
-            }
-        }
-    }
-
     private getPortId(id: NodeId, key: string, side: 'input' | 'output') {
         return [id, key, side].join('_')
     }
 
-    // eslint-disable-next-line max-statements
-    async layout(props?: { options?: LayoutOptions } & Partial<Context<Schemes>>) {
+    // eslint-disable-next-line max-statements, max-len
+    async layout(props?: { options?: LayoutOptions, applier?: Applier<Schemes, T> } & Partial<Context<Schemes>>) {
         const nodes = props?.nodes || this.getEditor().getNodes()
         const connections = props?.connections || this.getEditor().getConnections()
         const graph: ElkNode = {
@@ -217,13 +177,17 @@ export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends S
             },
             ...this.graphToElk({ nodes, connections })
         }
+        const applier = props?.applier || new StandardApplier()
         const source = JSON.stringify(graph, null, '\t')
+
+        applier.setEditor(this.getEditor())
+        applier.setArea(this.getArea())
 
         try {
             const result = await this.elk.layout(graph)
 
             if (result.children) {
-                await this.apply(result.children)
+                await applier.apply(result.children)
             }
 
             return {
