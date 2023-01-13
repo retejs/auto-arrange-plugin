@@ -4,11 +4,13 @@ import { NodeId } from 'rete'
 import { BaseSchemes } from '../../types'
 import { StandardApplier } from './standard'
 
+type Props = { duration?: number, timingFunction?: (t: number) => number, onTick?: (t: number) => void }
+
 export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier<S, K> {
     duration: number
     timingFunction: (t: number) => number
 
-    constructor(props?: { duration?: number, timingFunction?: (t: number) => number }) {
+    constructor(private props?: Props) {
         super()
         this.duration = typeof props?.duration !== 'undefined' ? props.duration : 2000
         this.timingFunction = typeof props?.timingFunction !== 'undefined' ? props.timingFunction : t => t
@@ -30,6 +32,7 @@ export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier
             const currentWidth = this.applyTiming(previous.width, width, t)
             const currentHeight = this.applyTiming(previous.height, height, t)
 
+            this.props?.onTick && this.props.onTick(t)
             return super.resizeNode(id, currentWidth, currentHeight)
         })
     }
@@ -44,6 +47,7 @@ export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier
             const currentX = this.applyTiming(previous.x, x, t)
             const currentY = this.applyTiming(previous.y, y, t)
 
+            this.props?.onTick && this.props.onTick(t)
             return super.translateNode(id, currentX, currentY)
         })
     }
