@@ -6,10 +6,18 @@ import { StandardApplier } from './standard'
 
 export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier<S, K> {
     duration: number
+    timingFunction: (t: number) => number
 
-    constructor(props?: { duration?: number }) {
+    constructor(props?: { duration?: number, timingFunction?: (t: number) => number }) {
         super()
         this.duration = typeof props?.duration !== 'undefined' ? props.duration : 2000
+        this.timingFunction = typeof props?.timingFunction !== 'undefined' ? props.timingFunction : t => t
+    }
+
+    protected applyTiming(from: number, to: number, t: number) {
+        const k = this.timingFunction(t)
+
+        return from * (1 - k) + to * k
     }
 
     protected async resizeNode(id: NodeId, width: number, height: number) {
@@ -18,10 +26,12 @@ export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier
         if (!node) return
         const previous = { width: node.width, height: node.height }
 
-        await this.animate(
-            this.duration,
-            t => super.resizeNode(id, width * t + previous.width * (1 - t), height * t + previous.height * (1 - t))
-        )
+        await this.animate(this.duration, t => {
+            const currentWidth = this.applyTiming(previous.width, width, t)
+            const currentHeight = this.applyTiming(previous.height, height, t)
+
+            return super.resizeNode(id, currentWidth, currentHeight)
+        })
     }
 
     protected async translateNode(id: NodeId, x: number, y: number) {
@@ -30,10 +40,12 @@ export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier
         if (!view) return
         const previous = { ...view.position }
 
-        await this.animate(
-            this.duration,
-            t => super.translateNode(id, x * t + previous.x * (1 - t), y * t + previous.y * (1 - t))
-        )
+        await this.animate(this.duration, t => {
+            const currentX = this.applyTiming(previous.x, x, t)
+            const currentY = this.applyTiming(previous.y, y, t)
+
+            return super.translateNode(id, currentX, currentY)
+        })
     }
 
     protected async animate(duration: number, tick: (t: number) => Promise<void>) {
