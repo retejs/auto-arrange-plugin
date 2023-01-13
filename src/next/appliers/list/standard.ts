@@ -14,7 +14,7 @@ export class StandardApplier<S extends BaseSchemes, K> extends Applier<S, K> {
     }
 
     // eslint-disable-next-line max-statements
-    protected async resizeNode(id: NodeId, width: number, height: number) {
+    protected async resizeNode(id: NodeId, width: number, height: number): Promise<void | boolean> {
         const node = this.editor.getNode(id)
         const view = this.area.nodeViews.get(id)
 
@@ -34,7 +34,7 @@ export class StandardApplier<S extends BaseSchemes, K> extends Applier<S, K> {
         }
     }
 
-    protected async translateNode(id: NodeId, x: number, y: number) {
+    protected async translateNode(id: NodeId, x: number, y: number): Promise<void | boolean> {
         const view = this.area.nodeViews.get(id)
 
         if (view) {
