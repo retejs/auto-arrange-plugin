@@ -36,17 +36,24 @@ type Context<S extends BaseSchemes> = { nodes: S['Node'][], connections: S['Conn
 
 export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
-    padding: Padding
+    padding: (node: Schemes['Node']) => Padding
     ports: { getPosition: PortPosition }
     demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
 
-    constructor(props?: { padding?: Padding, ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
+    constructor(props?: { padding?: Padding | ((node: Schemes['Node']) => Padding | undefined), ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
         super('auto-arrange')
-        this.padding = props && 'padding'in props && props.padding || {
+        const padding = props && 'padding'in props && props.padding
+        const defaultPadding = {
             top: 40,
             left: 20,
             right: 20,
             bottom: 20
+        }
+
+        if (padding) {
+            this.padding = typeof padding === 'function' ? (node) => padding(node) || defaultPadding : () => padding
+        } else {
+            this.padding = () => defaultPadding
         }
         this.ports = {
             getPosition: props?.ports && 'position' in props.ports && props.ports.position || (data => {
