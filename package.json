@@ -2,9 +2,6 @@
   "name": "rete-auto-arrange-plugin",
   "version": "2.0.0-beta.1",
   "description": "",
-  "main": "build/auto-arrange-plugin.common.js",
-  "module": "build/auto-arrange-plugin..esm.js",
-  "types": "types/index.d.ts",
   "scripts": {
     "build": "rete build -c rete.config.ts",
     "build:dev": "rete build -c rete.config.ts --watch",
@@ -18,14 +15,14 @@
   },
   "devDependencies": {
     "elkjs": "^0.8.2",
-    "rete": "file:../rete/rete-2.0.0-beta.1.tgz",
-    "rete-area-plugin": "file:../area-plugin/rete-area-plugin-0.2.1.tgz",
-    "rete-cli": "^1.0.0-beta.13"
+    "rete": "file:../rete/dist/package.tgz",
+    "rete-area-plugin": "file:../area-plugin/dist/package.tgz",
+    "rete-cli": "^1.0.0-beta.18"
   },
   "peerDependencies": {
     "elkjs": "^0.8.2",
-    "rete": "file:../rete/rete-2.0.0-beta.1.tgz",
-    "rete-area-plugin": "file:../area-plugin/rete-area-plugin-0.2.1.tgz",
+    "rete": "file:../rete/dist/package.tgz",
+    "rete-area-plugin": "file:../area-plugin/dist/package.tgz",
     "web-worker": "^1.2.0"
   }
 }
