@@ -1,7 +1,7 @@
 import { ElkNode } from 'elkjs'
 import { NodeId } from 'rete'
 
-import { BaseSchemes } from '../../../types'
+import { ExpectedSchemes } from '../../../types'
 import { StandardApplier } from '../standard'
 import { AnimationSystem } from './animation'
 
@@ -12,7 +12,7 @@ type Props = {
     needsLayout?: (id: NodeId) => boolean
 }
 
-export class TransitionApplier<S extends BaseSchemes, K> extends StandardApplier<S, K> {
+export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApplier<S, K> {
     duration: number
     timingFunction: (t: number) => number
     animation = new AnimationSystem()

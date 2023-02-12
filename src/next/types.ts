@@ -12,7 +12,7 @@ type ConnectionScheme = ConnectionBase & {
   targetInput?: string
   sourceOutput?: string
 }
-export type BaseSchemes = GetSchemes<NodeScheme, ConnectionScheme>
+export type ExpectedSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 
 export type Padding = {
   top: number,

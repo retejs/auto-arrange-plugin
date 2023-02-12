@@ -4,7 +4,7 @@ import { NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
 
 import { Applier, StandardApplier } from './appliers'
-import { BaseSchemes, Padding } from './types'
+import { ExpectedSchemes, Padding } from './types'
 
 export * as ArrangeAppliers from './appliers'
 export * from './types'
@@ -18,12 +18,12 @@ type PortPosition = (data: {
     ports: number
 }) => number
 
-type Context<S extends BaseSchemes> = {
+type Context<S extends ExpectedSchemes> = {
     nodes: S['Node'][]
     connections: S['Connection'][]
 }
 
-export class AutoArrangePlugin<Schemes extends BaseSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
+export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
     elk = new ELK()
     padding: (node: Schemes['Node']) => Padding
     ports: { getPosition: PortPosition }

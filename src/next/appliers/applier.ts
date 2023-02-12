@@ -2,9 +2,9 @@ import { ElkNode } from 'elkjs'
 import { NodeEditor } from 'rete'
 import { AreaPlugin } from 'rete-area-plugin'
 
-import { BaseSchemes } from '../types'
+import { ExpectedSchemes } from '../types'
 
-export abstract class Applier<S extends BaseSchemes, K> {
+export abstract class Applier<S extends ExpectedSchemes, K> {
     editor!: NodeEditor<S>
     area!: AreaPlugin<S, K>
 

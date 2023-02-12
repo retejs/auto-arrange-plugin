@@ -1,10 +1,10 @@
 import { ElkNode, ElkShape } from 'elkjs'
 import { NodeId } from 'rete'
 
-import { BaseSchemes, Size } from '../../types'
-import { Applier } from '..'
+import { ExpectedSchemes, Size } from '../../types'
+import { Applier } from '../applier'
 
-export class StandardApplier<S extends BaseSchemes, K> extends Applier<S, K> {
+export class StandardApplier<S extends ExpectedSchemes, K> extends Applier<S, K> {
     protected getValidShapes<Shape extends ElkShape>(shapes: Shape[]): (Shape & Required<ElkShape>)[] {
         return shapes.filter((shape): shape is Shape & Required<ElkShape> => {
             const { x, y, width, height } = shape
