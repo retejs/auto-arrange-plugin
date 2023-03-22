@@ -14,12 +14,6 @@ type ConnectionScheme = ConnectionBase & {
 }
 export type ExpectedSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 
-export type Padding = {
-  top: number,
-  left: number,
-  right: number,
-  bottom: number
-}
 export type Size = {
   width: number,
   height: number

@@ -3,62 +3,38 @@ import { NodeEditor, NodeId, Scope } from 'rete'
 import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
 
 import { Applier, StandardApplier } from './appliers'
-import { ExpectedSchemes, Padding } from './types'
+import { Preset } from './presets/types'
+import { ExpectedSchemes } from './types'
 
 export * as ArrangeAppliers from './appliers'
+export * as Presets from './presets'
 export * from './types'
 
-type PortPosition = (data: {
-    side: 'input' | 'output'
-    index: number
-    height: number
-    ports: number
-}) => number
-
 type Context<S extends ExpectedSchemes> = {
-    nodes: S['Node'][]
-    connections: S['Connection'][]
+  nodes: S['Node'][]
+  connections: S['Connection'][]
 }
 
 export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
   elk = new ELK()
-  padding: (node: Schemes['Node']) => Padding
-  ports: { getPosition: PortPosition }
   demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
+  presets: Preset[] = []
 
-  constructor(props?: { padding?: Padding | ((node: Schemes['Node']) => Padding | undefined), ports?: { position?: PortPosition } | { spacing?: number, top?: number, bottom?: number } }) {
+  constructor() {
     super('auto-arrange')
-    const padding = props && 'padding'in props && props.padding
-    const defaultPadding = {
-      top: 40,
-      left: 20,
-      right: 20,
-      bottom: 20
-    }
+  }
 
-    if (padding) {
-      this.padding = typeof padding === 'function' ? (node) => padding(node) || defaultPadding : () => padding
-    } else {
-      this.padding = () => defaultPadding
-    }
-    this.ports = {
-      getPosition: props?.ports && 'position' in props.ports && props.ports.position || (data => {
-        const { spacing, top, bottom } = props?.ports && 'spacing' in props.ports ? {
-          spacing: typeof props.ports.spacing !== 'undefined' ? props.ports.spacing : 35,
-          top: typeof props.ports.top !== 'undefined' ? props.ports.top : 35,
-          bottom: typeof props.ports.bottom !== 'undefined' ? props.ports.bottom : 15
-        } : {
-          spacing: 35,
-          top: 35,
-          bottom: 15
-        }
+  public addPreset(preset: Preset) {
+    this.presets.push(preset)
+  }
 
-        if (data.side === 'output') {
-          return top + data.index * spacing
-        }
-        return data.height - bottom - data.ports * spacing + data.index * spacing
-      })
+  private findPreset(nodeId: string) {
+    for (const presetFactory of this.presets) {
+      const result = presetFactory(nodeId)
+
+      if (result) return result
     }
+    throw new Error('cannot find preset for node with id = ' + nodeId)
   }
 
   private getArea() {
@@ -83,7 +59,7 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
         output
       }))
       : []
-    const { top, left, bottom, right } = this.padding(node)
+    const preset = this.findPreset(id)
 
     return <ElkNode>{
       id,
@@ -98,34 +74,55 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
       ports: [
         ...inputs
           .sort((a, b) => (a.input?.index || 0) - (b.input?.index || 0))
-          .map(({ key }, index) => (<ElkPort>{
-            id: this.getPortId(id, key, 'input'),
-            width: 15,
-            height: 15,
-            y: this.ports.getPosition({ side: 'input', index, height, ports: inputs.length }),
-            properties: {
-              side: 'WEST'
+          .map(({ key }, index) => {
+            const { side, width: portWidth, height: portHeight, x, y } = preset.port({
+              nodeId: id,
+              key,
+              side: 'input',
+              width,
+              height,
+              index,
+              ports: inputs.length
+            })
+
+            return <ElkPort>{
+              id: this.getPortId(id, key, 'input'),
+              width: portWidth,
+              height: portHeight,
+              x,
+              y,
+              properties: {
+                side
+              }
             }
-          })),
+          }),
         ...outputs
           .sort((a, b) => (a.output?.index || 0) - (b.output?.index || 0))
-          .map(({ key }, index) => (<ElkPort>{
-            id: this.getPortId(id, key, 'output'),
-            width: 15,
-            height: 15,
-            y: this.ports.getPosition({ side: 'output', index, height, ports: inputs.length }),
-            properties: {
-              side: 'EAST'
+          .map(({ key }, index) => {
+            const { side, width: portWidth, height: portHeight, x, y } = preset.port({
+              nodeId: id,
+              side: 'output',
+              key,
+              index,
+              width,
+              height,
+              ports: outputs.length
+            })
+
+            return <ElkPort>{
+              id: this.getPortId(id, key, 'output'),
+              width: portWidth,
+              height: portHeight,
+              x,
+              y,
+              properties: {
+                side
+              }
             }
-          }))
+          })
       ],
       properties: {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]`,
-        'portAlignment.east': 'BEGIN',
-        'portAlignment.west': 'END',
         portConstraints: 'FIXED_POS'
-        /* eslint-enable @typescript-eslint/naming-convention */
       }
     }
   }
