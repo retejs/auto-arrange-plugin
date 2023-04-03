@@ -1,6 +1,6 @@
 {
   "name": "rete-auto-arrange-plugin",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "",
   "scripts": {
     "build": "rete build -c rete.config.ts",
@@ -25,7 +25,7 @@
     "elkjs": "^0.8.2",
     "rete": "^2.0.0-beta.1",
     "rete-area-plugin": "^2.0.0-beta.1",
-    "rete-cli": "^1.0.0-beta.25"
+    "rete-cli": "^1.0.0-beta.26"
   },
   "peerDependencies": {
     "elkjs": "^0.8.2",
