@@ -8,9 +8,18 @@
   },
   "author": "Vitaliy Stoliarov",
   "license": "MIT",
+  "keywords": [
+    "plugin",
+    "rete",
+    "Rete.js"
+  ],
+  "homepage": "https://retejs.org",
   "repository": {
     "type": "git",
     "url": "https://github.com/retejs/auto-arrange-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/retejs/auto-arrange-plugin/issues"
   },
   "devDependencies": {
     "elkjs": "^0.8.2",
