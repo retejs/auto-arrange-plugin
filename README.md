@@ -9,6 +9,7 @@ Rete.js Auto arrange plugin
 
 - **Arrange nodes**: allows automatic arrangement of nodes, powered by `elkjs`
 - **Customization**: modify the placement of nodes by adjusting `elkjs` options
+- **Nested nodes**: supports nodes with a `parent` field, like in [Scopes plugin](https://github.com/retejs/scopes-plugin)
 - **Presets**: predefined configuration for the ports placement
   - **Classic**: provides a classic ports placement (left bottom and right top relative to the node)
 - **Appliers**: enhance the layout features
