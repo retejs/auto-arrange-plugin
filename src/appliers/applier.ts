@@ -1,20 +1,20 @@
 import { ElkNode } from 'elkjs'
 import { NodeEditor } from 'rete'
-import { AreaPlugin } from 'rete-area-plugin'
+import { BaseAreaPlugin } from 'rete-area-plugin'
 
 import { ExpectedSchemes } from '../types'
 
 export abstract class Applier<S extends ExpectedSchemes, K> {
   editor!: NodeEditor<S>
-  area!: AreaPlugin<S, K>
+  area!: BaseAreaPlugin<S, K>
 
   setEditor(editor: NodeEditor<S>) {
     this.editor = editor
   }
 
-  setArea(area: AreaPlugin<S, K>) {
+  setArea(area: BaseAreaPlugin<S, K>) {
     this.area = area
   }
 
-    public abstract apply(nodes: ElkNode[]): Promise<void>
+  public abstract apply(nodes: ElkNode[]): Promise<void>
 }

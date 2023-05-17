@@ -29,8 +29,8 @@
   },
   "peerDependencies": {
     "elkjs": "^0.8.2",
-    "rete": "^2.0.0-beta.1",
-    "rete-area-plugin": "^2.0.0-beta.1",
+    "rete": "^2.0.0-beta.9",
+    "rete-area-plugin": "^2.0.0-beta.11",
     "web-worker": "^1.2.0"
   },
   "dependencies": {

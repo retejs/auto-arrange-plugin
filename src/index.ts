@@ -1,6 +1,6 @@
 import ELK, { ElkNode, ElkPort, LayoutOptions } from 'elkjs'
-import { NodeEditor, NodeId, Scope } from 'rete'
-import { Area2DInherited, AreaPlugin } from 'rete-area-plugin'
+import { NodeEditor, NodeId, Root, Scope } from 'rete'
+import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin'
 
 import { Applier, StandardApplier } from './appliers'
 import { Preset } from './presets/types'
@@ -15,7 +15,7 @@ type Context<S extends ExpectedSchemes> = {
   connections: S['Connection'][]
 }
 
-export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> extends Scope<never, Area2DInherited<Schemes, T>> {
+export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> extends Scope<never, [BaseArea<Schemes> | T, Root<Schemes>]> {
   elk = new ELK()
   demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
   presets: Preset[] = []
@@ -38,7 +38,7 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
   }
 
   private getArea() {
-    return this.parentScope<AreaPlugin<Schemes, T>>(AreaPlugin)
+    return this.parentScope<BaseAreaPlugin<Schemes, T>>(BaseAreaPlugin)
   }
 
   private getEditor() {
