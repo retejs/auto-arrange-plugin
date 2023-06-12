@@ -6,6 +6,7 @@ import { Applier, StandardApplier } from './appliers'
 import { Preset } from './presets/types'
 import { ExpectedSchemes } from './types'
 
+export type { Preset }
 export * as ArrangeAppliers from './appliers'
 export * as Presets from './presets'
 export * from './types'
@@ -121,7 +122,9 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
             }
           })
       ],
-      properties: {
+      layoutOptions: {
+        ...preset.options?.(id) || {},
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         portConstraints: 'FIXED_POS'
       }
     }
