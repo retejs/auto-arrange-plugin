@@ -4,6 +4,9 @@ import { NodeId } from 'rete'
 import { ExpectedSchemes } from '../../types'
 import { Applier } from '../applier'
 
+/**
+ * Standard applier. Applies the layout to the nodes and their children immediately
+ */
 export class StandardApplier<S extends ExpectedSchemes, K> extends Applier<S, K> {
   protected getValidShapes<Shape extends ElkShape>(shapes: Shape[]): (Shape & Required<ElkShape>)[] {
     return shapes.filter((shape): shape is Shape & Required<ElkShape> => {

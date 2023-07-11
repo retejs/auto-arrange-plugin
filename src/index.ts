@@ -16,6 +16,10 @@ type Context<S extends ExpectedSchemes> = {
   connections: S['Connection'][]
 }
 
+/**
+ * Auto arrange plugin. Layouts the graph using `elk.js`
+ * @priority 10
+ */
 export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> extends Scope<never, [BaseArea<Schemes> | T, Root<Schemes>]> {
   elk = new ELK()
   demonstration = 'https://rtsys.informatik.uni-kiel.de/elklive/json.html'
@@ -25,6 +29,10 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
     super('auto-arrange')
   }
 
+  /**
+   * Adds a preset to the plugin, which will be used to layout the node ports and customize the layout options
+   * @param preset Preset to add
+   */
   public addPreset(preset: Preset) {
     this.presets.push(preset)
   }
@@ -161,6 +169,13 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
     return [id, key, side].join('_')
   }
 
+  /**
+   * Method to layout the graph
+   * @param props Options for the layout
+   * @param props.options elk.js options for the layout
+   * @param props.applier Layout applier. Responsible for applying node positions to the graph
+   * @returns Debug information about the layout
+   */
   // eslint-disable-next-line max-statements, max-len
   async layout(props?: { options?: LayoutOptions, applier?: Applier<Schemes, T> } & Partial<Context<Schemes>>) {
     const nodes = props?.nodes || this.getEditor().getNodes()

@@ -5,18 +5,31 @@ import { ExpectedSchemes } from '../../../types'
 import { StandardApplier } from '../standard'
 import { AnimationSystem } from './animation'
 
-type Props = {
-    duration?: number
-    timingFunction?: (t: number) => number
-    onTick?: (t: number) => void
-    needsLayout?: (id: NodeId) => boolean
+/**
+ * Transition applier props
+ */
+export type Props = {
+  /** Transition duration */
+  duration?: number
+  /** Transition timing function. Default is linear */
+  timingFunction?: (t: number) => number
+  /** Callback for each tick (frame) of the transition */
+  onTick?: (t: number) => void
+  /** Callback specifying whether the node needs to be laid out */
+  needsLayout?: (id: NodeId) => boolean
 }
 
+/**
+ * Transition applier. Applies the layout to the nodes and their children with transition
+ */
 export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApplier<S, K> {
   duration: number
   timingFunction: (t: number) => number
   animation = new AnimationSystem()
 
+  /**
+   * @param props Transition applier props
+   */
   constructor(private props?: Props) {
     super()
     this.duration = typeof props?.duration !== 'undefined' ? props.duration : 2000
