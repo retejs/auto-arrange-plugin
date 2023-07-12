@@ -1,4 +1,5 @@
 
 export { Applier } from './applier'
 export { StandardApplier } from './list/standard'
-export { TransitionApplier, Props as TransitionApplierProps } from './list/transition'
+export type { Props as TransitionApplierProps } from './list/transition'
+export { TransitionApplier } from './list/transition'
