@@ -26,4 +26,4 @@ Please refer to the [Contribution](https://retejs.org/docs/contribution) guide
 
 ## License
 
-[MIT](https://github.com/retejs/auto-arrange-plugin/blob/master/LICENSE)
+[MIT](https://github.com/retejs/auto-arrange-plugin/blob/main/LICENSE)
