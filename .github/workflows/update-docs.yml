@@ -10,5 +10,5 @@ jobs:
     uses: retejs/.github/.github/workflows/update-docs.yml@main
     secrets: inherit
     with:
-      filename: '1.rete'
-      package: rete
+      filename: '4.rete-auto-arrange-plugin'
+      package: rete-auto-arrange-plugin
