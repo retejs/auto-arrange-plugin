@@ -15,6 +15,6 @@ type ConnectionScheme = ConnectionBase & {
 export type ExpectedSchemes = GetSchemes<NodeScheme, ConnectionScheme>
 
 export type Size = {
-  width: number,
+  width: number
   height: number
 }

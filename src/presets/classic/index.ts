@@ -8,9 +8,15 @@ export const setup = (props?: { spacing?: number, top?: number, bottom?: number 
   return () => ({
     port(data): PortData {
       const { spacing, top, bottom } = {
-        spacing: props && typeof props.spacing !== 'undefined' ? props.spacing : 35,
-        top: props && typeof props.top !== 'undefined' ? props.top : 35,
-        bottom: props && typeof props.bottom !== 'undefined' ? props.bottom : 15
+        spacing: typeof props?.spacing !== 'undefined'
+          ? props.spacing
+          : 35,
+        top: typeof props?.top !== 'undefined'
+          ? props.top
+          : 35,
+        bottom: typeof props?.bottom !== 'undefined'
+          ? props.bottom
+          : 15
       }
 
       if (data.side === 'output') {
