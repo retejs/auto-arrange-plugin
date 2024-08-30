@@ -70,19 +70,21 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
       : []
     const preset = this.findPreset(id)
 
-    return <ElkNode>{
+    return {
       id,
       width,
       height,
       labels: [
         {
-          text: 'label' in node ? node.label : ''
+          text: 'label' in node
+            ? node.label
+            : ''
         }
       ],
       ...this.graphToElk(context, id),
       ports: [
         ...inputs
-          .sort((a, b) => (a.input?.index || 0) - (b.input?.index || 0))
+          .sort((a, b) => (a.input?.index ?? 0) - (b.input?.index ?? 0))
           .map(({ key }, index) => {
             const { side, width: portWidth, height: portHeight, x, y } = preset.port({
               nodeId: id,
@@ -94,7 +96,7 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
               ports: inputs.length
             })
 
-            return <ElkPort>{
+            return {
               id: this.getPortId(id, key, 'input'),
               width: portWidth,
               height: portHeight,
@@ -103,10 +105,10 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
               properties: {
                 side
               }
-            }
+            } as ElkPort
           }),
         ...outputs
-          .sort((a, b) => (a.output?.index || 0) - (b.output?.index || 0))
+          .sort((a, b) => (a.output?.index ?? 0) - (b.output?.index ?? 0))
           .map(({ key }, index) => {
             const { side, width: portWidth, height: portHeight, x, y } = preset.port({
               nodeId: id,
@@ -118,7 +120,7 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
               ports: outputs.length
             })
 
-            return <ElkPort>{
+            return {
               id: this.getPortId(id, key, 'output'),
               width: portWidth,
               height: portHeight,
@@ -127,15 +129,15 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
               properties: {
                 side
               }
-            }
+            } as ElkPort
           })
       ],
       layoutOptions: {
         ...preset.options?.(id) || {},
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+
         portConstraints: 'FIXED_POS'
       }
-    }
+    } as ElkNode
   }
 
   private connectionToLayoutEdge(connection: Schemes['Connection']) {
@@ -176,10 +178,10 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
    * @param props.applier Layout applier. Responsible for applying node positions to the graph
    * @returns Debug information about the layout
    */
-  // eslint-disable-next-line max-statements, max-len
+  // eslint-disable-next-line max-statements, complexity
   async layout(props?: { options?: LayoutOptions, applier?: Applier<Schemes, T> } & Partial<Context<Schemes>>) {
-    const nodes = props?.nodes || this.getEditor().getNodes()
-    const connections = props?.connections || this.getEditor().getConnections()
+    const nodes = props?.nodes ?? this.getEditor().getNodes()
+    const connections = props?.connections ?? this.getEditor().getConnections()
     const graph: ElkNode = {
       id: 'root',
       layoutOptions: {
@@ -187,12 +189,12 @@ export class AutoArrangePlugin<Schemes extends ExpectedSchemes, T = never> exten
         'elk.algorithm': 'layered',
         'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
         'elk.edgeRouting': 'POLYLINE',
-        ...(props?.options || {} as LayoutOptions)
+        ...props?.options ?? {} as LayoutOptions
         /* eslint-enable @typescript-eslint/naming-convention */
       },
       ...this.graphToElk({ nodes, connections })
     }
-    const applier = props?.applier || new StandardApplier()
+    const applier = props?.applier ?? new StandardApplier()
     const source = JSON.stringify(graph, null, '\t')
 
     applier.setEditor(this.getEditor())

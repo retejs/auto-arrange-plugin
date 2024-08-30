@@ -3,8 +3,8 @@ import { Size } from '../types'
 type NodeSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'
 
 export type PortData = {
-  y: number,
-  x: number,
+  y: number
+  x: number
   side: NodeSide
 } & Size
 export type Preset = (nodeId: string) => (null | {

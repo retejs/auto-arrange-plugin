@@ -32,8 +32,12 @@ export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApp
    */
   constructor(private props?: Props) {
     super()
-    this.duration = typeof props?.duration !== 'undefined' ? props.duration : 2000
-    this.timingFunction = typeof props?.timingFunction !== 'undefined' ? props.timingFunction : t => t
+    this.duration = typeof props?.duration !== 'undefined'
+      ? props.duration
+      : 2000
+    this.timingFunction = typeof props?.timingFunction !== 'undefined'
+      ? props.timingFunction
+      : t => t
 
     this.animation.start()
   }
@@ -54,7 +58,9 @@ export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApp
       const currentWidth = this.applyTiming(previous.width, width, t)
       const currentHeight = this.applyTiming(previous.height, height, t)
 
-      this.props?.onTick && this.props.onTick(t)
+      if (this.props?.onTick) {
+        this.props.onTick(t)
+      }
       return super.resizeNode(id, currentWidth, currentHeight)
     })
   }
@@ -69,7 +75,9 @@ export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApp
       const currentX = this.applyTiming(previous.x, x, t)
       const currentY = this.applyTiming(previous.y, y, t)
 
-      this.props?.onTick && this.props.onTick(t)
+      if (this.props?.onTick) {
+        this.props.onTick(t)
+      }
       return super.translateNode(id, currentX, currentY)
     })
   }
@@ -83,8 +91,10 @@ export class TransitionApplier<S extends ExpectedSchemes, K> extends StandardApp
     const correctNodes = this.getValidShapes(nodes)
 
     await Promise.all(correctNodes.map(({ id, x, y, width, height, children }) => {
-      const hasChilden = children && children.length
-      const needsLayout = this.props?.needsLayout ? this.props.needsLayout(id) : true
+      const hasChilden = children?.length
+      const needsLayout = this.props?.needsLayout
+        ? this.props.needsLayout(id)
+        : true
       const forceSelf = !hasChilden || needsLayout
 
       return Promise.all([

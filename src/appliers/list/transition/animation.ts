@@ -1,9 +1,9 @@
 
 type AnimationRecord = {
-    startTime: number
-    duration: number
-    cb: (t: number) => void
-    done: (success: boolean) => void
+  startTime: number
+  duration: number
+  cb: (t: number) => void
+  done: (success: boolean) => void
 }
 
 export class AnimationSystem {
@@ -28,14 +28,16 @@ export class AnimationSystem {
       }
       cb(t)
     })
-    this.frameId = requestAnimationFrame(() => this.start())
+    this.frameId = requestAnimationFrame(() => {
+      this.start()
+    })
   }
 
   async add<R>(duration: number, id: string, tick: (t: number) => Promise<R>) {
     const startTime = Date.now()
 
     return new Promise<boolean>(done => {
-      this.activeAnimations.set(id, { startTime, duration, cb: tick, done })
+      this.activeAnimations.set(id, { startTime, duration, cb: t => void tick(t), done })
     })
   }
 
