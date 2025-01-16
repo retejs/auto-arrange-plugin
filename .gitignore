@@ -1,9 +1,0 @@
-node_modules
-.idea/
-.vscode/
-npm-debug.log
-dist
-docs
-/coverage
-.rete-cli
-.sonar
