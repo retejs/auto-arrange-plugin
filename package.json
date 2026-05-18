@@ -23,11 +23,15 @@
     "url": "https://github.com/retejs/auto-arrange-plugin/issues"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "elkjs": "^0.8.2",
     "globals": "^15.9.0",
+    "jest": "^30.4.2",
     "rete": "^2.0.1",
     "rete-area-plugin": "^2.0.0",
-    "rete-cli": "~2.0.1"
+    "rete-cli": "~2.0.1",
+    "ts-jest": "^29.4.9",
+    "typescript": "^5.6.3"
   },
   "peerDependencies": {
     "elkjs": "^0.8.2",
